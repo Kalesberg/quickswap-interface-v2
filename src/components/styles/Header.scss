@@ -1,11 +1,12 @@
-@use 'styles/variables' as *;
-@use 'styles/breakpoints' as *;
+@use "styles/variables" as *;
+@use "styles/breakpoints" as *;
 
 .header {
   top: 0px;
   position: fixed;
   width: 100%;
   z-index: 12;
+  color: white;
 }
 
 .network-name {
@@ -14,12 +15,7 @@
 
 .newsletterBar {
   position: relative;
-  background: linear-gradient(
-    90deg,
-    $black2 -11.2%,
-    $purple4 41.95%,
-    $primary 100%
-  );
+  background: linear-gradient(90deg, $black2 -11.2%, $purple4 41.95%, $primary 100%);
   z-index: 5;
   display: flex;
   min-height: 40px;
@@ -42,7 +38,7 @@
     right: 12px;
     display: flex;
   }
-  @include media('screen', '<tablet') {
+  @include media("screen", "<tablet") {
     padding: 6px 28px;
     flex-direction: column;
     & button {
@@ -54,6 +50,18 @@
   }
 }
 
+.desktopLogo {
+  height: 60px;
+}
+
+.perpsDesktopLogo {
+  height: 36px;
+}
+
+.mobileLogo {
+  height: 40px;
+}
+
 .menuBar {
   padding: 0 24px;
   min-height: 88px;
@@ -61,8 +69,15 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
+  -webkit-backdrop-filter: blur(30px);
+  backdrop-filter: blur(30px);
+  background-color: #12131a66;
   & a {
     display: flex;
+  }
+  & > div > a {
+    position: relative;
+    z-index: 10;
   }
   & > div {
     display: flex;
@@ -90,35 +105,42 @@
       }
     }
   }
-  @include media('screen', '<tablet') {
+  @include media("screen", "<tablet") {
     align-items: center;
     position: relative;
     min-height: 64px;
   }
-  @include media('screen', '<phone') {
+  @include media("screen", "<phone") {
     padding: 0 16px;
     position: relative;
     min-height: 64px;
   }
 }
 .mainMenu {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+  // position: absolute;
+  // left: 50%;
+  // transform: translateX(-50%);
+}
+.mainMenuPerps {
+  flex: 1;
+}
+.mainMenu,
+.mainMenuPerps {
   display: flex;
   align-items: center;
+  justify-content: center;
   height: 100%;
+  width: 100%;
   & .menuItem {
     cursor: pointer;
     position: relative;
     display: flex;
     align-items: center;
     height: 36px;
-    padding: 0 24px;
-    margin-right: 6px;
+    padding: 0 20px;
     overflow: hidden;
     border-radius: 10px;
-    color: $textSecondary;
+    color: $white1;
     & small {
       white-space: nowrap;
     }
@@ -204,7 +226,7 @@
   left: 0;
   border-radius: 10px;
   top: 32px;
-  @include media('screen', '<tablet') {
+  @include media("screen", "<tablet") {
     width: 100%;
     left: unset;
     top: unset;
@@ -217,13 +239,14 @@
 }
 .accountDetails {
   border: solid 1px $grey2;
-  padding: 0 16px;
+  padding: 0 8px;
   height: 36px;
   cursor: pointer;
   border-radius: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border: solid 1px rgba(255, 255, 255, 0.04);
   & p {
     font-size: 14px;
     font-weight: 600;
@@ -234,12 +257,12 @@
   }
 }
 .connectButton {
-  width: 152px;
+  width: 125px;
   height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 20px;
+  border-radius: 10px;
   font-size: 14px;
   font-weight: 600;
   color: white;
@@ -379,14 +402,14 @@
   top: -2px;
 }
 
-.networkSelectionWrapper {
+.headerDropdownWrapper {
   position: relative;
-  @include media('screen', '<tablet') {
+  @include media("screen", "<tablet") {
     position: unset;
   }
 }
 
-.networkSelection {
+.headerDropdown {
   background-color: $secondary1;
   display: flex;
   align-items: center;
@@ -398,11 +421,40 @@
   img {
     width: 18px;
     border-radius: 18px;
+    &.orderlyPointsIcon {
+      width: 24px;
+      height: 24px;
+      border-radius: 24px;
+    }
   }
   svg {
     width: 18px;
     height: 18px;
     margin-left: 4px;
+  }
+}
+
+.orderlyPointsTitle {
+  margin-left: 6px;
+}
+
+.orderlyPointsDropdown {
+  width: 230px;
+  padding: 16px;
+  border-radius: 14px;
+  backdrop-filter: blur(40px);
+  box-shadow: 0 0 12px 0 rgba(46, 48, 60, 0.12), inset 0 0 10px 0 #448aff;
+  border: solid 1px rgba(255, 255, 255, 0.1);
+  position: absolute;
+  right: 0;
+  top: 50px;
+  display: flex;
+  flex-direction: column;
+
+  @include media('screen', '<tablet') {
+    top: 70px;
+    right: 5%;
+    width: 90%;
   }
 }
 
@@ -420,7 +472,7 @@
 
 @media (max-width: 959px) {
   .header {
-    background-color: #121319;
+    background-color: rgba(18, 19, 26, 0.49);
   }
 
   .networkSelection {
@@ -429,7 +481,7 @@
   }
 
   .accountDetails {
-    border: none;
+    // border: none;
     border-radius: 12px;
     background-color: #1b1e29;
   }
@@ -441,12 +493,70 @@
   }
 }
 
+#basic-menu {
+  .MuiPaper-root {
+    background-color: rgba(18, 19, 26) !important;
+  }
+}
+
 .menu-list-item {
   max-height: 48px;
   height: 48px;
+  overflow: hidden;
+  position: relative;
 
   &.active {
     color: #448aff;
     // background-color: #252833;
+  }
+
+  .menuItemSparkle {
+    position: absolute;
+    transition: all 0.5s;
+  }
+  .menuItemSparkleTop {
+    top: -10px;
+    left: 0;
+    // margin-left: -10px;
+  }
+  .menuItemSparkleBottom {
+    bottom: -10px;
+    left: 0;
+    // margin-left: -12px;
+  }
+  .menuItemSparkleLeft {
+    left: -10px;
+    top: 20px;
+  }
+  .menuItemSparkleRight {
+    right: -10px;
+    top: 20px;
+  }
+
+  &:hover {
+    color: $textPrimary;
+    background: $secondary1;
+    .menuItemSparkleTop {
+      top: 2px;
+    }
+    .menuItemSparkleBottom {
+      bottom: 2px;
+    }
+    .menuItemSparkleLeft {
+      left: 8px;
+    }
+    .menuItemSparkleRight {
+      right: 8px;
+    }
+    & .subMenu {
+      display: block;
+    }
+  }
+}
+
+.web3ModalButton {
+  margin-right: -12px;
+  @include media('screen', '<tablet') {
+    margin: 0 -12px;
   }
 }

@@ -566,7 +566,7 @@ function useLairInfo(
     ignore,
   );
 
-  accountArg = [lairAddress ?? undefined];
+  accountArg = [(lairAddress as any) ?? undefined];
 
   const lairsQuickBalance = useSingleCallResult(
     quickContract,
@@ -630,15 +630,17 @@ function useLairInfo(
       oneDayVol: oneDayVolume ?? 0,
     };
   }, [
-    lairAddress,
-    quickBalance,
-    dQuickBalance,
-    _dQuickTotalSupply,
-    lairsQuickBalance,
-    dQuickToQuick,
-    quickToDQuick,
-    dQuickToken,
     quickToken,
+    dQuickToQuick,
+    ignore,
+    lairsQuickBalance.loading,
+    lairsQuickBalance?.result,
+    lairAddress,
+    dQuickToken,
+    quickToDQuick?.result,
+    dQuickBalance?.result,
+    quickBalance?.result,
+    _dQuickTotalSupply?.result,
     oneDayVolume,
   ]);
 }

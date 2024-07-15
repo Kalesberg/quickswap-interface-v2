@@ -1,72 +1,49 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link, useLocation, useHistory } from 'react-router-dom';
+import { Link, useHistory } from 'react-router-dom';
 import { Box, Button, useMediaQuery } from '@material-ui/core';
-import { KeyboardArrowDown, Close, KeyboardArrowUp } from '@material-ui/icons';
+import { Close } from '@material-ui/icons';
 import { useTheme } from '@material-ui/core/styles';
-import { useUDDomain, useWalletModalToggle } from 'state/application/hooks';
-import {
-  isTransactionRecent,
-  useAllTransactions,
-} from 'state/transactions/hooks';
-import { TransactionDetails } from 'state/transactions/reducer';
-import { shortenAddress } from 'utils';
-//import useENSName from 'hooks/useENSName';
-import { WalletModal } from 'components';
-import { useActiveWeb3React } from 'hooks';
+import { useSwitchNetwork, useWalletInfo } from '@web3modal/ethers5/react';
+import { useActiveWeb3React, useConnectWallet } from 'hooks';
 import QuickIcon from 'assets/images/quickIcon.svg';
 import QuickLogo from 'assets/images/quickLogo.png';
 import QuickLogoWebP from 'assets/images/quickLogo.webp';
+import QuickPerpsLogo from 'assets/images/quickPerpsLogo.webp';
 import { ReactComponent as ThreeDotIcon } from 'assets/images/ThreeDot.svg';
-// import { ReactComponent as LightIcon } from 'assets/images/LightIcon.svg';
-import WalletIcon from 'assets/images/WalletIcon.png';
 import 'components/styles/Header.scss';
 import { useTranslation } from 'react-i18next';
 import { getConfig } from 'config/index';
 import useDeviceWidth from 'hooks/useDeviceWidth';
-import { USDC, USDT } from 'constants/v3/addresses';
+import { NEW_QUICK, USDC, USDO, USDT } from 'constants/v3/addresses';
 import { ChainId } from '@uniswap/sdk';
-import {
-  networkConnection,
-  walletConnectConnection,
-  zengoConnectConnection,
-} from 'connectors';
 import { MobileMenuDrawer } from './MobileMenuDrawer';
 import useParsedQueryString from 'hooks/useParsedQueryString';
 import { HeaderListItem, HeaderMenuItem } from './HeaderListItem';
 import { HeaderDesktopItem } from './HeaderDesktopItem';
+import MobileHeader from './MobileHeader';
+import KeyboardArrowDownIcon from '@material-ui/icons/KeyboardArrowDown';
 import { NetworkSelection } from './NetworkSelection';
-
-const newTransactionsFirst = (a: TransactionDetails, b: TransactionDetails) => {
-  return b.addedTime - a.addedTime;
-};
+import { OrderlyPoints } from './OrderlyPoints';
+import { shortenAddress, useIsSupportedNetwork } from 'utils';
+import AccountDetailsModal from 'components/AccountDetails/AccountDetailsModal';
 
 const Header: React.FC<{ onUpdateNewsletter: (val: boolean) => void }> = ({
   onUpdateNewsletter,
 }) => {
   const { t } = useTranslation();
   const history = useHistory();
-  const { account, chainId, connector } = useActiveWeb3React();
-  //const { ENSName } = useENSName(account ?? undefined);
-  const { udDomain } = useUDDomain();
-  //const [openDetailMenu, setOpenDetailMenu] = useState(false);
+  const { chainId, account } = useActiveWeb3React();
+  const { switchNetwork } = useSwitchNetwork();
+  const { walletInfo } = useWalletInfo();
+  const isSupportedNetwork = useIsSupportedNetwork();
+  const { connectWallet } = useConnectWallet(isSupportedNetwork);
   const [showNewsletter, setShowNewsletter] = useState(false);
+  const [showAccountDetailsModal, setShowAccountDetailsModal] = useState(false);
 
   const theme = useTheme();
-  const allTransactions = useAllTransactions();
-  const sortedRecentTransactions = useMemo(() => {
-    const txs = Object.values(allTransactions);
-    return txs.filter(isTransactionRecent).sort(newTransactionsFirst);
-  }, [allTransactions]);
 
-  const pending = sortedRecentTransactions
-    .filter((tx: any) => !tx.receipt)
-    .map((tx: any) => tx.hash);
-  const confirmed = sortedRecentTransactions
-    .filter((tx: any) => tx.receipt)
-    .map((tx: any) => tx.hash);
   const tabletWindowSize = useMediaQuery(theme.breakpoints.down('sm'));
   const mobileWindowSize = useMediaQuery(theme.breakpoints.down('xs'));
-  const toggleWalletModal = useWalletModalToggle();
   const deviceWidth = useDeviceWidth();
   const [headerClass, setHeaderClass] = useState('');
 
@@ -90,9 +67,9 @@ const Header: React.FC<{ onUpdateNewsletter: (val: boolean) => void }> = ({
 
   const menuItemCountToShow = useMemo(() => {
     if (deviceWidth > 1580) {
-      return 7;
+      return 8;
     } else if (deviceWidth > 1500) {
-      return 6;
+      return 7;
     } else if (deviceWidth > 1320) {
       return 5;
     } else if (deviceWidth > 1190) {
@@ -104,6 +81,8 @@ const Header: React.FC<{ onUpdateNewsletter: (val: boolean) => void }> = ({
     }
     return 1;
   }, [deviceWidth]);
+
+  const isHome = history.location.pathname === '/';
 
   const config = getConfig(chainId);
   const showSwap = config['swap']['available'];
@@ -117,6 +96,7 @@ const Header: React.FC<{ onUpdateNewsletter: (val: boolean) => void }> = ({
   const showLeaderboard = config['leaderboard']['available'];
   const showSafe = config['safe']['available'];
   const showPerps = config['perps']['available'];
+  const showPerpsV2 = config['perpsV2']['available'];
   const showBOS = config['bos']['available'];
   const showBonds = config['bonds']['available'];
   const showDappOS = config['dappos']['available'];
@@ -127,6 +107,9 @@ const Header: React.FC<{ onUpdateNewsletter: (val: boolean) => void }> = ({
     if (!chainId) return '';
     if (chainId === ChainId.ZKTESTNET)
       return `&currency1=${USDT[chainId].address}`;
+    if (chainId === ChainId.DOGECHAIN)
+      return `&currency1=${USDO[chainId].address}`;
+    if (NEW_QUICK[chainId]) return `&currency1=${NEW_QUICK[chainId].address}`;
     if (USDC[chainId]) return `&currency1=${USDC[chainId].address}`;
     return '';
   }, [chainId]);
@@ -138,7 +121,32 @@ const Header: React.FC<{ onUpdateNewsletter: (val: boolean) => void }> = ({
       id: 'swap-page-link',
     });
   }
-  if (showPerps) {
+  const perpsTab: HeaderMenuItem = {
+    text: t('Perps'),
+    id: 'earn-tab',
+    link: '/',
+    items: [],
+    isNew: true,
+  };
+  // if (showPerpsV2 && showPerps) {
+  //   menuItems.push(perpsTab);
+  // }
+  // const perpsItem = {
+  //   link: '/perps',
+  //   text: 'Perps',
+  //   id: 'perps-page-link',
+  //   isExternal: true,
+  //   externalLink: process?.env?.REACT_APP_PERPS_URL || '',
+  //   onClick: async () => {
+  //     if (chainId !== ChainId.ZKEVM) {
+  //       switchNetwork(ChainId.ZKEVM);
+  //     }
+  //     if (process.env.REACT_APP_PERPS_URL) {
+  //       window.open(process.env.REACT_APP_PERPS_URL, '_self');
+  //     }
+  //   },
+  // };
+  if (isHome) {
     menuItems.push({
       link: '/perps',
       text: 'Perps',
@@ -155,21 +163,52 @@ const Header: React.FC<{ onUpdateNewsletter: (val: boolean) => void }> = ({
             nativeCurrency: zkEVMconfig['nativeCurrency'],
             blockExplorerUrls: [zkEVMconfig['blockExplorer']],
           };
-          if (
-            connector === walletConnectConnection.connector ||
-            connector === networkConnection.connector
-          ) {
-            await connector.activate(ChainId.ZKEVM);
-          } else {
-            await connector.activate(chainParam);
-          }
         }
         if (process.env.REACT_APP_PERPS_URL) {
           window.open(process.env.REACT_APP_PERPS_URL, '_self');
         }
       },
+      items: [
+        {
+          id: 'perps-new-page-link',
+          link: '/falkor',
+          text: 'Perps - PoS',
+          isNew: true,
+        },
+        {
+          id: 'perps-v1-page-link',
+          link: process.env.REACT_APP_PERPS_URL || '#',
+          text: 'Perps - zkEVM',
+          onClick: () => {
+            if (process.env.REACT_APP_PERPS_URL) {
+              window.open(process.env.REACT_APP_PERPS_URL, '_blank');
+            }
+          },
+        },
+      ],
     });
+  } else {
+    if (chainId === ChainId.MATIC) {
+      menuItems.push({
+        id: 'perps-new-page-link',
+        link: '/falkor',
+        text: 'Perps',
+        isNew: true,
+      });
+    } else if (chainId === ChainId.ZKEVM) {
+      menuItems.push({
+        id: 'perps-v1-page-link',
+        link: process.env.REACT_APP_PERPS_URL || '#',
+        text: 'Perps',
+        onClick: () => {
+          if (process.env.REACT_APP_PERPS_URL) {
+            window.open(process.env.REACT_APP_PERPS_URL, '_blank');
+          }
+        },
+      });
+    }
   }
+
   if (showPool) {
     menuItems.push({
       link: `/pools`,
@@ -182,11 +221,27 @@ const Header: React.FC<{ onUpdateNewsletter: (val: boolean) => void }> = ({
     id: 'earn-tab',
     link: '/',
     items: [],
-    isNew: true,
+  };
+
+  const partnersTab: HeaderMenuItem = {
+    text: t('Partners'),
+    id: 'partners',
+    link: '/partners',
+    items: [
+      {
+        link: '/dappOS',
+        text: 'DappOS',
+        id: 'dappos-page-link',
+        isExternal: true,
+        target: '_blank',
+        externalLink: process?.env?.REACT_APP_DAPPOS_URL || '',
+      },
+    ],
   };
   if (showEarn) {
     menuItems.push(earnTab);
   }
+  menuItems.push(partnersTab);
   if (showFarm) {
     if (showEarn) {
       earnTab.items?.push({
@@ -217,7 +272,7 @@ const Header: React.FC<{ onUpdateNewsletter: (val: boolean) => void }> = ({
       });
     }
   }
-  if (showSafe) {
+  if (chainId === ChainId.ZKEVM) {
     menuItems.push({
       link: '/safe',
       text: 'Safe',
@@ -235,6 +290,11 @@ const Header: React.FC<{ onUpdateNewsletter: (val: boolean) => void }> = ({
       id: 'dragons-page-link',
     });
   }
+  menuItems.push({
+    link: '/bridge',
+    text: t('Bridge'),
+    id: 'bridge-page-link',
+  });
   if (showGamingHub) {
     menuItems.push({
       link: '/gamehub',
@@ -271,17 +331,7 @@ const Header: React.FC<{ onUpdateNewsletter: (val: boolean) => void }> = ({
       id: 'convert-quick',
     });
   }
-  if (showDappOS) {
-    menuItems.push({
-      link: '/dappos',
-      text: 'DappOS',
-      id: 'dappos-page-link',
-      isExternal: true,
-      target: '_blank',
-      externalLink: process?.env?.REACT_APP_DAPPOS_URL || '',
-      isNew: true,
-    });
-  }
+
   if (showLending) {
     menuItems.push({
       link: '/lend',
@@ -307,27 +357,13 @@ const Header: React.FC<{ onUpdateNewsletter: (val: boolean) => void }> = ({
   useEffect(() => {
     (async () => {
       if (parsedChain && chainId !== parsedChain) {
-        const config = getConfig(parsedChain);
-        const chainParam = {
-          chainId: parsedChain,
-          chainName: `${config['networkName']} Network`,
-          rpcUrls: [config['rpc']],
-          nativeCurrency: config['nativeCurrency'],
-          blockExplorerUrls: [config['blockExplorer']],
-        };
-        if (
-          connector === walletConnectConnection.connector ||
-          connector === zengoConnectConnection.connector ||
-          connector === networkConnection.connector
-        ) {
-          await connector.activate(parsedChain);
-        } else {
-          await connector.activate(chainParam);
-        }
+        switchNetwork(parsedChain);
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chainId, parsedChain]);
+
+  const isPerpsPage = history.location.pathname === '/falkor';
 
   return (
     <Box className='header'>
@@ -346,67 +382,86 @@ const Header: React.FC<{ onUpdateNewsletter: (val: boolean) => void }> = ({
         </Box>
       )}
       <Box className={`menuBar ${tabletWindowSize ? '' : headerClass}`}>
-        <WalletModal
-          ENSName={undefined}
-          pendingTransactions={pending}
-          confirmedTransactions={confirmed}
+        <AccountDetailsModal
+          open={showAccountDetailsModal}
+          onClose={() => setShowAccountDetailsModal(false)}
         />
-        <Link to='/'>
-          {mobileWindowSize && (
-            <img src={QuickIcon} alt='QuickLogo' height={40} />
-          )}
-          {!mobileWindowSize && (
-            <picture>
-              <source height={60} srcSet={QuickLogoWebP} type='image/webp' />
-              <img src={QuickLogo} alt='QuickLogo' height={60} />
-            </picture>
-          )}
-        </Link>
-        {!tabletWindowSize && (
-          <Box className='mainMenu'>
-            {menuItems.slice(0, menuItemCountToShow).map((val, i) => (
-              <HeaderDesktopItem key={`header-desktop-item-${i}`} item={val} />
-            ))}
-            {menuItems.slice(menuItemCountToShow, menuItems.length).length >
-              0 && (
-              <Box display='flex' className='menuItem subMenuItem'>
-                <ThreeDotIcon />
-                <Box className='subMenuWrapper'>
-                  <Box className='subMenu'>
-                    {menuItems
-                      .slice(menuItemCountToShow, menuItems.length)
-                      .map((val, i) => (
-                        <HeaderListItem key={'sub-menu' + i} item={val} />
-                      ))}
+        <Box style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          <Link to='/'>
+            {mobileWindowSize && (
+              <img src={QuickIcon} alt='QuickLogo' height={32} />
+            )}
+            {!mobileWindowSize && (
+              <picture>
+                <source height={32} srcSet={QuickIcon} type='image/webp' />
+                <img src={QuickLogo} alt='QuickLogo' height={32} />
+              </picture>
+            )}
+          </Link>
+          {!tabletWindowSize && (
+            <Box className='mainMenu'>
+              {menuItems.slice(0, menuItemCountToShow).map((val, i) => (
+                <HeaderDesktopItem
+                  key={`header-desktop-item-${i}`}
+                  item={val}
+                />
+              ))}
+              {menuItems.slice(menuItemCountToShow, menuItems.length).length >
+                0 && (
+                <Box display='flex' className='menuItem subMenuItem'>
+                  <ThreeDotIcon />
+                  <Box className='subMenuWrapper'>
+                    <Box className='subMenu'>
+                      {menuItems
+                        .slice(menuItemCountToShow, menuItems.length)
+                        .map((val, i) => (
+                          <HeaderListItem key={'sub-menu' + i} item={val} />
+                        ))}
+                    </Box>
                   </Box>
                 </Box>
-              </Box>
-            )}
-          </Box>
-        )}
-        {tabletWindowSize && <MobileMenuDrawer menuItems={menuItems} />}
-        <Box>
-          {!parsedChain && <NetworkSelection />}
-
-          {account ? (
-            <Box
-              id='web3-status-connected'
-              className='accountDetails'
-              onClick={toggleWalletModal}
-            >
-              <p>{udDomain ?? shortenAddress(account)}</p>
-              <img src={WalletIcon} alt='Wallet' />
-            </Box>
-          ) : (
-            <Box
-              className='connectButton bg-primary'
-              onClick={toggleWalletModal}
-            >
-              {t('connectWallet')}
+              )}
             </Box>
           )}
         </Box>
+        <Box>
+          {isPerpsPage && !mobileWindowSize && <OrderlyPoints />}
+          <Box style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <NetworkSelection />
+            {!!account ? (
+              <Box
+                id='web3-status-connected'
+                className='accountDetails'
+                onClick={() => setShowAccountDetailsModal(true)}
+                style={{ gap: '8px' }}
+              >
+                {walletInfo?.icon && (
+                  <img src={walletInfo?.icon} width={24} alt='wallet icon' />
+                )}
+                <p>{shortenAddress(account)}</p>
+                <KeyboardArrowDownIcon />
+              </Box>
+            ) : (
+              <Box
+                className='connectButton bg-primary'
+                onClick={() => {
+                  connectWallet();
+                }}
+              >
+                {t('connectWallet')}
+              </Box>
+            )}
+          </Box>
+        </Box>
       </Box>
+
+      {(mobileWindowSize || tabletWindowSize) && (
+        <MobileHeader
+          isMobile={mobileWindowSize}
+          isTablet={tabletWindowSize}
+          menuItems={menuItems}
+        />
+      )}
     </Box>
   );
 };

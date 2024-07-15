@@ -53,6 +53,7 @@ import {
   EURO3,
   DAIE,
   SD,
+  ABOND,
 } from './v3/addresses';
 import { FeeAmount } from 'v3lib/utils';
 
@@ -64,6 +65,7 @@ export const AVERAGE_L1_BLOCK_TIME = 12000;
 export const merklAMMs: { [chainId in ChainId]?: string[] } = {
   [ChainId.MATIC]: ['quickswapalgebra'],
   [ChainId.ZKEVM]: ['quickswapalgebra', 'quickswapuni'],
+  [ChainId.LAYERX]: ['quickswapalgebra'],
 };
 
 export const blackListMerklFarms: { [chainId in ChainId]?: string[] } = {
@@ -1493,6 +1495,24 @@ export const GammaPairs: {
         token1Address: '0x385Eeac5cB85A38A9a07A70c73e0a3271CfB54A7',
       },
     ],
+    '0x3c499c542cef5e3811e1192ce70d8cc03d5c3359-0xa3fa99a148fa48d14ed51d610c367c61876997f1': [
+      {
+        type: Presets.GAMMA_STABLE,
+        title: 'Stable',
+        address: '0xe0fb098af0544df0124dcd326b15c0df3ca62164',
+        token0Address: '0x3c499c542cef5e3811e1192ce70d8cc03d5c3359',
+        token1Address: '0xa3fa99a148fa48D14ed51d610c367c61876997f1',
+      },
+    ],
+    '0x3c499c542cef5e3811e1192ce70d8cc03d5c3359-0x53e0bca35ec356bd5dddfebbd1fc0fd03fabad39': [
+      {
+        type: Presets.GAMMA_NARROW,
+        title: 'Narrow',
+        address: '0x9854aba3f857f19660f856bdb19718081ce6120a',
+        token0Address: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359',
+        token1Address: '0x53E0bca35eC356BD5ddDFebbD1Fc0fD03FaBad39',
+      },
+    ],
   },
   [ChainId.ZKEVM]: {
     '0x4f9a0e7fd2bf6067db6994cf12e4495df938e6e9-0xa8ce8aee21bc2a48a5ef670afcc9274c7bbbc035': [
@@ -2303,6 +2323,15 @@ export const IchiVaults: {
     '0xD79D60CEAD6406e2Fc228a6778B6bB5caE47BB8c',
     '0x29a117f122A5317A2b547b1A204624cb7E83FA6F',
     '0xdc58504630972421445CBa4f856ABbA3Ce1BCB8a',
+    '0x2FF07791F125BF6CE120D938f862d0385Cf4c835',
+    '0xb5a4B8d3c8F88a25801aF460f52fEc639403534f',
+    '0x2ED64d3De2A2c060FF4b31e9B2f9268ADcE7e671',
+    '0x6fD4058ED78608F3C613585EEa222F6F5480e0D5',
+    '0x3c306334b3728F5E50c1eDfA8338ffe96C875812',
+  ],
+  [ChainId.ZKEVM]: [
+    '0x423382e084f1d1d180bec638bc64cc6408896c3c',
+    '0xb4eac29e630e38133e015ad17e3986886d5e8b35',
   ],
 };
 
@@ -2411,6 +2440,42 @@ export const DefiedgeStrategies: {
       token1: '0xB5C064F955D8e7F38fE0460C556a72987494eE17',
       pool: '0x14Ef96A0f7d738Db906bdD5260E46AA47B1e6E45',
     },
+    {
+      id: '0x913912a9e05eea0bc36d097ea80dbde36e186e11',
+      token0: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359',
+      token1: '0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063',
+      pool: '0xBC8f3da0bd42E1F2509cd8671Ce7c7E5f7fd39c8',
+    },
+    {
+      id: '0x684a4c7e734d509d6aaca7636ff60fd513f59ad1',
+      token0: '0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359',
+      token1: '0xc2132D05D31c914a87C6611C10748AEb04B58e8F',
+      pool: '0x0e3Eb2C75Bd7dD0e12249d96b1321d9570764D77',
+    },
+    {
+      id: '0xe1e1e644e77fc7cfc79cdf0fcd945588db39eefd',
+      token0: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174',
+      token1: '0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063',
+      pool: '0xe7E0eB9F6bCcCfe847fDf62a3628319a092F11a2',
+    },
+    {
+      id: '0xf9db53defa526073d0e042053d2d556e23d4162c',
+      token0: '0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063',
+      token1: '0xc2132D05D31c914a87C6611C10748AEb04B58e8F',
+      pool: '0xefFA9E5e63ba18160Ee26BdA56b42F3368719615',
+    },
+    {
+      id: '0xd3d7c8876aa8a5df038f54a07c241612822d6dd1',
+      token0: '0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6',
+      token1: '0xc2132D05D31c914a87C6611C10748AEb04B58e8F',
+      pool: '0x76D9553f9910c5CF1F5dBbb210dc95BC5a63EE68',
+    },
+    {
+      id: '0x48c2d81426ea135ab9a34332252099cf21ca3a22',
+      token0: '0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174',
+      token1: '0xc2132D05D31c914a87C6611C10748AEb04B58e8F',
+      pool: '0x7B925e617aefd7FB3a93Abe3a701135D7a1Ba710',
+    },
   ],
 };
 
@@ -2482,6 +2547,7 @@ export const GlobalValue = {
         NFTE[ChainId.MATIC],
         CRS[ChainId.MATIC],
         SD[ChainId.MATIC],
+        ABOND[ChainId.MATIC],
       ],
       [ChainId.DOGECHAIN]: [
         EMPTY[ChainId.DOGECHAIN],
@@ -2533,6 +2599,7 @@ export const paraswapTaxBuy: { [key: string]: number } = {
   '0xfca466f2fa8e667a517c9c6cfa99cf985be5d9b1': 300,
   '0x74dd45dd579cad749f9381d6227e7e02277c944b': 300,
   '0x428360b02c1269bc1c79fbc399ad31d58c1e8fda': 200,
+  '0x119fd89e56e3845b520644dcedf4a86cd0b66aa6': 300,
 };
 
 export const paraswapTaxSell: { [key: string]: number } = {
@@ -2542,6 +2609,7 @@ export const paraswapTaxSell: { [key: string]: number } = {
   '0xfca466f2fa8e667a517c9c6cfa99cf985be5d9b1': 300,
   '0x74dd45dd579cad749f9381d6227e7e02277c944b': 300,
   '0x428360b02c1269bc1c79fbc399ad31d58c1e8fda': 600,
+  '0x119fd89e56e3845b520644dcedf4a86cd0b66aa6': 300,
 };
 
 export const GlobalData = {

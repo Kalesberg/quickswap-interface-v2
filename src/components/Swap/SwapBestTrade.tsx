@@ -12,7 +12,7 @@ import {
 import { Currency, CurrencyAmount, NativeCurrency } from '@uniswap/sdk-core';
 import ReactGA from 'react-ga';
 import { ArrowDown } from 'react-feather';
-import { Box, Button, CircularProgress } from '@material-ui/core';
+import { Box, Button, CircularProgress, Typography } from '@material-ui/core';
 import {
   useDefaultsFromURLSearch,
   useDerivedSwapInfo,
@@ -21,7 +21,6 @@ import {
 } from 'state/swap/hooks';
 import {
   useExpertModeManager,
-  useSelectedWallet,
   useUserSlippageTolerance,
 } from 'state/user/hooks';
 import { Field } from 'state/swap/actions';
@@ -30,7 +29,6 @@ import { CurrencyInput, ConfirmSwapModal, AddressInput } from 'components';
 import {
   useActiveWeb3React,
   useConnectWallet,
-  useGetConnection,
   useIsProMode,
   useMasaAnalytics,
 } from 'hooks';
@@ -80,6 +78,14 @@ import useNativeConvertCallback, {
 } from 'hooks/useNativeConvertCallback';
 import { useApproveCallback } from 'hooks/useApproveCallback';
 import { SLIPPAGE_AUTO } from 'state/user/reducer';
+import arrowDown from 'assets/images/icons/arrow-down.png';
+import chart from 'assets/images/icons/chart.svg';
+import SignUp from './SignUp';
+import inforIcon from 'assets/images/info-icon.webp';
+import settingIcon from 'assets/images/setting-icon.webp';
+import { useWalletInfo } from '@web3modal/ethers5/react';
+import { useAppDispatch } from 'state';
+import { updateUserBalance } from 'state/balance/actions';
 
 const SwapBestTrade: React.FC<{
   currencyBgClass?: string;
@@ -88,6 +94,7 @@ const SwapBestTrade: React.FC<{
   const loadedUrlParams = useDefaultsFromURLSearch();
   const isProMode = useIsProMode();
   const isSupportedNetwork = useIsSupportedNetwork();
+  const { walletInfo } = useWalletInfo();
 
   // token warning stuff
   // const [loadedInputCurrency, loadedOutputCurrency] = [
@@ -148,6 +155,7 @@ const SwapBestTrade: React.FC<{
     typedValue,
   );
 
+  const dispatch = useAppDispatch();
   const [swapType, setSwapType] = useState<SwapSide>(SwapSide.SELL);
 
   const showWrap: boolean = wrapType !== WrapType.NOT_APPLICABLE;
@@ -205,23 +213,6 @@ const SwapBestTrade: React.FC<{
     typedValue,
   );
 
-  const [selectedInputCurrency, selectedOutputCurrency] = [
-    useCurrency(wrappedCurrency(currencies[Field.INPUT], chainId)?.address),
-    useCurrency(wrappedCurrency(currencies[Field.OUTPUT], chainId)?.address),
-  ];
-  const selectedTokens: Token[] = useMemo(
-    () =>
-      [selectedInputCurrency, selectedOutputCurrency]?.filter(
-        (c): c is Token => c instanceof Token,
-      ) ?? [],
-    [selectedInputCurrency, selectedOutputCurrency],
-  );
-  const selectedTokensNotInDefault =
-    selectedTokens &&
-    selectedTokens.filter((token: Token) => {
-      return !Boolean(token.address in defaultTokens);
-    });
-
   const showNativeConvert = convertType !== ConvertType.NOT_APPLICABLE;
 
   const [approvalSubmitted, setApprovalSubmitted] = useState<boolean>(false);
@@ -262,23 +253,13 @@ const SwapBestTrade: React.FC<{
     },
     [
       chainIdToUse,
+      defaultTokens,
       parsedCurrency1Id,
+      redirectWithCurrency,
       redirectWithSwitch,
       swapType,
-      redirectWithCurrency,
-      defaultTokens,
     ],
   );
-
-  const parsedCurrency0 = useCurrency(parsedCurrency0Id);
-  useEffect(() => {
-    if (parsedCurrency0) {
-      onCurrencySelection(Field.INPUT, parsedCurrency0);
-    } else if (parsedCurrency0 === undefined && !parsedCurrency1Id) {
-      redirectWithCurrency(ETHER[chainIdToUse], true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [parsedCurrency0, parsedCurrency1Id, chainIdToUse]);
 
   const handleOtherCurrencySelect = useCallback(
     (outputCurrency: any) => {
@@ -312,13 +293,42 @@ const SwapBestTrade: React.FC<{
     ],
   );
 
+  const parsedCurrency0 = useCurrency(parsedCurrency0Id);
   const parsedCurrency1 = useCurrency(parsedCurrency1Id);
+  const parsedCurrency0Fetched = !!parsedCurrency0;
+  const parsedCurrency1Fetched = !!parsedCurrency1;
+
   useEffect(() => {
-    if (parsedCurrency1) {
-      onCurrencySelection(Field.OUTPUT, parsedCurrency1);
+    if (parsedCurrency0 === undefined && !parsedCurrency1Id) {
+      redirectWithCurrency(ETHER[chainIdToUse], true);
+    } else {
+      if (parsedCurrency0) {
+        onCurrencySelection(Field.INPUT, parsedCurrency0);
+      }
+      if (parsedCurrency1) {
+        onCurrencySelection(Field.OUTPUT, parsedCurrency1);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [parsedCurrency1Id]);
+  }, [
+    parsedCurrency0Id,
+    parsedCurrency1Id,
+    parsedCurrency0Fetched,
+    parsedCurrency1Fetched,
+  ]);
+
+  const selectedTokens: Token[] = useMemo(
+    () =>
+      [parsedCurrency0, parsedCurrency1]?.filter(
+        (c): c is Token => c instanceof Token,
+      ) ?? [],
+    [parsedCurrency0, parsedCurrency1],
+  );
+  const selectedTokensNotInDefault =
+    selectedTokens &&
+    selectedTokens.filter((token: Token) => {
+      return !Boolean(token.address in defaultTokens);
+    });
 
   const paraswap = useParaswap();
 
@@ -538,6 +548,8 @@ const SwapBestTrade: React.FC<{
   useEffect(() => {
     if (approval === ApprovalState.PENDING) {
       setApprovalSubmitted(true);
+    } else if (approval === ApprovalState.APPROVED) {
+      setApprovalSubmitted(false);
     }
   }, [approval]);
 
@@ -822,8 +834,6 @@ const SwapBestTrade: React.FC<{
 
   const { fireEvent } = useMasaAnalytics();
   const config = getConfig(chainId);
-  const { selectedWallet } = useSelectedWallet();
-  const getConnection = useGetConnection();
   const fromTokenWrapped = wrappedCurrency(currencies[Field.INPUT], chainId);
   const { price: fromTokenUSDPrice } = useUSDCPriceFromAddress(
     fromTokenWrapped?.address ?? '',
@@ -857,6 +867,7 @@ const SwapBestTrade: React.FC<{
           finalizedTransaction(receipt, {
             summary,
           });
+          dispatch(updateUserBalance());
           setSwapState({
             attemptingTxn: false,
             txPending: false,
@@ -879,10 +890,9 @@ const SwapBestTrade: React.FC<{
             account &&
             optimalRate &&
             fromTokenWrapped &&
-            selectedWallet &&
+            walletInfo &&
             chainId === ChainId.MATIC
           ) {
-            const connection = getConnection(selectedWallet);
             fireEvent('trade', {
               user_address: account,
               network: config['networkName'],
@@ -890,7 +900,7 @@ const SwapBestTrade: React.FC<{
               asset_amount: formattedAmounts[Field.INPUT],
               asset_ticker: fromTokenWrapped.symbol ?? '',
               additionalEventData: {
-                wallet: connection.name,
+                wallet: walletInfo.name,
                 asset_usd_amount: (
                   Number(formattedAmounts[Field.INPUT]) * fromTokenUSDPrice
                 ).toString(),
@@ -921,6 +931,7 @@ const SwapBestTrade: React.FC<{
     tradeToConfirm,
     showConfirm,
     finalizedTransaction,
+    dispatch,
     recipient,
     recipientAddress,
     account,
@@ -928,9 +939,8 @@ const SwapBestTrade: React.FC<{
     outputCurrency?.symbol,
     optimalRate,
     fromTokenWrapped,
-    selectedWallet,
+    walletInfo,
     chainId,
-    getConnection,
     fireEvent,
     config,
     formattedAmounts,
@@ -1072,14 +1082,14 @@ const SwapBestTrade: React.FC<{
     approval, //Added to trigger bonus route search when approval changes
   ]);
   //Reset approvalSubmitted when approval changes, it's needed when user hadn't nor paraswap neither wallchain approvals
-  useEffect(() => {
-    if (
-      approval === ApprovalState.NOT_APPROVED ||
-      approval === ApprovalState.UNKNOWN
-    ) {
-      setApprovalSubmitted(false);
-    }
-  }, [approval]);
+  // useEffect(() => {
+  //   if (
+  //     approval === ApprovalState.NOT_APPROVED ||
+  //     approval === ApprovalState.UNKNOWN
+  //   ) {
+  //     setApprovalSubmitted(false);
+  //   }
+  // }, [approval]);
 
   useEffect(() => {
     if (
@@ -1090,15 +1100,15 @@ const SwapBestTrade: React.FC<{
     }
   }, [nativeConvertApproval]);
 
+  const optimalRateNotExisting = !optimalRate;
   useEffect(() => {
-    if (!optimalRate) {
+    if (!optimalRateNotExisting) {
       reFetchOptimalRate();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [!optimalRate]);
+  }, [optimalRateNotExisting]);
 
   const [currentTime, setCurrentTime] = useState(Math.floor(Date.now() / 1000));
-
   return (
     <Box>
       <TokenWarningModal
@@ -1126,8 +1136,9 @@ const SwapBestTrade: React.FC<{
         />
       )}
       <CurrencyInput
-        title={`${t('from')}:`}
+        title={`${t('Pay')}:`}
         id='swap-currency-input'
+        classNames='from_input'
         currency={currencies[Field.INPUT]}
         onHalf={handleHalfInput}
         onMax={handleMaxInput}
@@ -1141,18 +1152,40 @@ const SwapBestTrade: React.FC<{
         bgClass={isProMode ? 'swap-bg-highlight' : currencyBgClass}
       />
       <Box className='exchangeSwap'>
-        <ExchangeIcon
+        {/* <ExchangeIcon
           onClick={() => {
             setSwapType(
               swapType === SwapSide.BUY ? SwapSide.SELL : SwapSide.BUY,
             );
             redirectWithSwitch();
           }}
-        />
+        /> */}
+        <Box
+          onClick={() => {
+            setSwapType(
+              swapType === SwapSide.BUY ? SwapSide.SELL : SwapSide.BUY,
+            );
+            redirectWithSwitch();
+          }}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '24px',
+            height: '24px',
+            borderRadius: '4px',
+            border: '2px solid #191b2e',
+            bgcolor: '#232734',
+          }}
+        >
+          {/* <AddLiquidityIcon /> */}
+          <img src={arrowDown} alt='arrow down' width='12px' height='12px' />
+        </Box>
       </Box>
       <CurrencyInput
-        title={`${t('toEstimate')}:`}
+        title={`${t('Receive')}:`}
         id='swap-currency-output'
+        classNames='to_input'
         currency={currencies[Field.OUTPUT]}
         showPrice={Boolean(optimalRate)}
         showMaxButton={false}
@@ -1163,28 +1196,6 @@ const SwapBestTrade: React.FC<{
         color={isProMode ? 'white' : 'secondary'}
         bgClass={isProMode ? 'swap-bg-highlight' : currencyBgClass}
       />
-      {paraRate && (
-        <Box className='swapPrice'>
-          <small>{t('price')}:</small>
-          <small>
-            1{' '}
-            {
-              (mainPrice ? currencies[Field.INPUT] : currencies[Field.OUTPUT])
-                ?.symbol
-            }{' '}
-            = {(mainPrice ? paraRate : 1 / paraRate).toLocaleString('us')}{' '}
-            {
-              (mainPrice ? currencies[Field.OUTPUT] : currencies[Field.INPUT])
-                ?.symbol
-            }{' '}
-            <PriceExchangeIcon
-              onClick={() => {
-                setMainPrice(!mainPrice);
-              }}
-            />
-          </small>
-        </Box>
-      )}
       {!showNativeConvert && !showWrap && isExpertMode && (
         <Box className='recipientInput'>
           <Box className='recipientInputHeader'>
@@ -1211,11 +1222,6 @@ const SwapBestTrade: React.FC<{
           )}
         </Box>
       )}
-      <BestTradeAdvancedSwapDetails
-        optimalRate={optimalRate}
-        inputCurrency={inputCurrency}
-        outputCurrency={outputCurrency}
-      />
       <Box className='swapButtonWrapper'>
         {showApproveFlow && (
           <Box width='48%'>
@@ -1251,7 +1257,7 @@ const SwapBestTrade: React.FC<{
                 }
               }}
             >
-              {approval === ApprovalState.PENDING ? (
+              {approvalSubmitted && approval !== ApprovalState.APPROVED ? (
                 <Box className='content'>
                   {t('approving')} <CircularProgress size={16} />
                 </Box>
@@ -1278,6 +1284,85 @@ const SwapBestTrade: React.FC<{
           </Button>
         </Box>
       </Box>
+      {paraRate && (
+        <Box
+          sx={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gridGap: '4px',
+            marginTop: '16px',
+          }}
+        >
+          <img src={chart} alt='chart' />
+          <Typography
+            style={{
+              fontSize: '13px',
+              color: '#fff',
+              fontWeight: 500,
+              marginBottom: '-2px',
+            }}
+          >
+            <Box className='swapPrice'>
+              <small>
+                1{' '}
+                {
+                  (mainPrice
+                    ? currencies[Field.INPUT]
+                    : currencies[Field.OUTPUT]
+                  )?.symbol
+                }{' '}
+                = {(mainPrice ? paraRate : 1 / paraRate).toLocaleString('us')}{' '}
+                {
+                  (mainPrice
+                    ? currencies[Field.OUTPUT]
+                    : currencies[Field.INPUT]
+                  )?.symbol
+                }{' '}
+                <PriceExchangeIcon
+                  onClick={() => {
+                    setMainPrice(!mainPrice);
+                  }}
+                />
+              </small>
+            </Box>
+          </Typography>
+        </Box>
+      )}
+      <BestTradeAdvancedSwapDetails
+        optimalRate={optimalRate}
+        inputCurrency={inputCurrency}
+        outputCurrency={outputCurrency}
+      />
+      {/* <Box className='subtext-color infoWrapper'>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+          <Box>
+            <img src={inforIcon} alt='information' /> {t('slipPage')}
+          </Box>
+          <Box>
+            1%
+            <img src={settingIcon} alt='Setting' />
+          </Box>
+        </Box>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+          <Box>
+            <img src={inforIcon} alt='information' /> {t('minimumReceived')}
+          </Box>
+          <Box>5463.44 MATIC</Box>
+        </Box>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+          <Box>
+            <img src={inforIcon} alt='information' /> {t('priceImpact')}
+          </Box>
+          <Box>0.3%</Box>
+        </Box>
+      </Box> */}
+      <SignUp
+        onSubcribe={() => {
+          console.log('sub');
+        }}
+      />
     </Box>
   );
 };

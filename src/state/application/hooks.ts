@@ -14,13 +14,10 @@ import {
   addBookMarkPair,
   removeBookmarkPair,
   updateTokenDetails,
-  updateMaticPrice,
   updateIsV2,
-  updateUDDomain,
-  updateSoulZap,
   updateOpenNetworkSelection,
 } from './actions';
-import { ETHPrice, MaticPrice, TokenDetail } from './reducer';
+import { TokenDetail } from './reducer';
 
 export function useBlockNumber(): number | undefined {
   const { chainId } = useActiveWeb3React();
@@ -55,10 +52,6 @@ export function useOpenModal(modal: ApplicationModal): () => void {
 export function useCloseModals(): () => void {
   const dispatch = useDispatch<AppDispatch>();
   return useCallback(() => dispatch(setOpenModal(null)), [dispatch]);
-}
-
-export function useWalletModalToggle(): () => void {
-  return useToggleModal(ApplicationModal.WALLET);
 }
 
 export function useToggleSettingsMenu(): () => void {
@@ -112,34 +105,6 @@ export function useRemovePopup(): (key: string) => void {
 export function useActivePopups(): AppState['application']['popupList'] {
   const list = useSelector((state: AppState) => state.application.popupList);
   return useMemo(() => list.filter((item) => item.show), [list]);
-}
-
-export function useMaticPrice(): {
-  maticPrice: MaticPrice;
-  updateMaticPrice: ({
-    price,
-    oneDayPrice,
-    maticPriceChange,
-  }: MaticPrice) => void;
-} {
-  const maticPrice = useSelector(
-    (state: AppState) => state.application.maticPrice,
-  );
-
-  const dispatch = useDispatch();
-  const _updateMaticPrice = useCallback(
-    ({ price, oneDayPrice, maticPriceChange }: MaticPrice) => {
-      dispatch(
-        updateMaticPrice({
-          price: price ?? 0,
-          oneDayPrice: oneDayPrice ?? 0,
-          maticPriceChange: maticPriceChange ?? 0,
-        }),
-      );
-    },
-    [dispatch],
-  );
-  return { maticPrice, updateMaticPrice: _updateMaticPrice };
 }
 
 export function useTokenDetails(): {
@@ -244,21 +209,6 @@ export function useIsV2(): {
     [dispatch],
   );
   return { isV2, updateIsV2: _updateIsV2 };
-}
-
-export function useUDDomain(): {
-  udDomain: string | undefined;
-  updateUDDomain: (udDomain: string | undefined) => void;
-} {
-  const udDomain = useSelector((state: AppState) => state.application.udDomain);
-  const dispatch = useDispatch();
-  const _updateUDDomain = useCallback(
-    (udDomain: string | undefined) => {
-      dispatch(updateUDDomain(udDomain));
-    },
-    [dispatch],
-  );
-  return { udDomain, updateUDDomain: _updateUDDomain };
 }
 
 export function useSoulZap() {

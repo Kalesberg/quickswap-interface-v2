@@ -1,6 +1,6 @@
 import { Box, Button, Menu, MenuItem, Typography } from '@material-ui/core';
 import { KeyboardArrowDown } from '@material-ui/icons';
-import { ReactComponent as SettingsIcon } from 'assets/images/SettingsIcon.svg';
+import { ReactComponent as SettingsIcon } from 'assets/images/icons/cog-fill.svg';
 import { ReactComponent as CrossChainIcon } from 'assets/images/crossChainIcon.svg';
 import { SettingsModal, ToggleSwitch } from 'components';
 import { SwapBestTrade } from 'components/Swap';
@@ -12,6 +12,7 @@ import React, { lazy, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router-dom';
 import { useIsV2 } from 'state/application/hooks';
+import { useUserSlippageTolerance } from 'state/user/hooks';
 import { SlippageWrapper } from './SlippageWrapper';
 const SwapV3Page = lazy(() => import('./V3/Swap'));
 const Swap = lazy(() =>
@@ -52,13 +53,18 @@ const SwapMain: React.FC = () => {
   const showCrossChain = config['swap']['crossChain'];
   const showProMode = config['swap']['proMode'];
 
+  const [
+    userSlippageTolerance,
+    setUserslippageTolerance,
+  ] = useUserSlippageTolerance();
+
   const SwapDropdownTabs = useMemo(() => {
     const tabs = [];
     if (showBestTrade) {
       tabs.push({ name: 'bestTrade', key: SWAP_BEST_TRADE });
     }
     if (v2) {
-      tabs.push({ name: 'market', key: SWAP_NORMAL });
+      tabs.push({ name: 'marketV2', key: SWAP_NORMAL });
     }
     if (v3) {
       tabs.push({ name: 'marketV3', key: SWAP_V3 });
@@ -192,6 +198,9 @@ const SwapMain: React.FC = () => {
     if (showLimitOrder) {
       tabs.push({ id: SWAP_LIMIT.toString(), text: 'Limit' });
     }
+    if (showCrossChain) {
+      tabs.push({ id: SWAP_CROSS_CHAIN.toString(), text: 'Cross-chain' });
+    }
     if (showTwapOrder) {
       tabs.push({ id: SWAP_TWAP.toString(), text: 'TWAP' });
     }
@@ -216,37 +225,13 @@ const SwapMain: React.FC = () => {
         <SettingsModal
           open={openSettingsModal}
           onClose={() => setOpenSettingsModal(false)}
+          defaultSlippage={userSlippageTolerance}
         />
       )}
       {/* Header */}
       <Box display={'flex'} mb={2}>
         <Box my={'auto'}>
           <Typography variant='h6'>{t('swap')}</Typography>
-        </Box>
-        <Box className='flex items-center' ml={'auto'} gridGap='8px'>
-          {showProMode && (
-            <Box className='flex items-center'>
-              <span
-                className='text-secondary text-uppercase'
-                style={{ marginRight: 8 }}
-              >
-                {t('proMode')}
-              </span>
-              <ToggleSwitch
-                toggled={isProMode}
-                onToggle={() => {
-                  redirectWithProMode(!isProMode);
-                }}
-              />
-            </Box>
-          )}
-          <Box className='flex items-center'>
-            <SlippageWrapper />
-            <SettingsIcon
-              className='cursor-pointer'
-              onClick={() => setOpenSettingsModal(true)}
-            />
-          </Box>
         </Box>
       </Box>
       <Box
@@ -258,56 +243,7 @@ const SwapMain: React.FC = () => {
           {!isProMode ? (
             <>
               <Box display='flex' className='tabContainer'>
-                {dropDownMenuText && (
-                  <Button
-                    id='swap-button'
-                    aria-controls={open ? 'swap-menu' : undefined}
-                    aria-haspopup='true'
-                    aria-expanded={open ? 'true' : undefined}
-                    variant='text'
-                    disableElevation
-                    onClick={handleClickListItem}
-                    endIcon={<KeyboardArrowDown />}
-                    className={`tab tabMenu ${
-                      selectedIndex !== SWAP_CROSS_CHAIN ? 'activeTab' : ''
-                    }`}
-                  >
-                    {t(dropDownMenuText)}
-                  </Button>
-                )}
-                <Menu
-                  id='swap-menu'
-                  anchorEl={anchorEl}
-                  open={open}
-                  onClose={handleClose}
-                  MenuListProps={{
-                    'aria-labelledby': 'swap-button',
-                    role: 'listbox',
-                  }}
-                >
-                  {SwapDropdownTabs.filter((d) => d.visible !== false).map(
-                    (option, index) => (
-                      <MenuItem
-                        className={`swap-menu-item ${
-                          option.key === selectedIndex
-                            ? 'swap-menu-item-selected'
-                            : ''
-                        }`}
-                        key={option.key}
-                        disabled={option.key === selectedIndex}
-                        selected={option.key === selectedIndex}
-                        onClick={(event) => handleMenuItemClick(event, index)}
-                      >
-                        {t(option.name)}
-                        {option.key === selectedIndex && (
-                          <Box ml={5} className='selectedMenuDot' />
-                        )}
-                      </MenuItem>
-                    ),
-                  )}
-                </Menu>
-
-                {showCrossChain && (
+                {/* {showCrossChain && (
                   <Box
                     className={`tab ${
                       selectedIndex === SWAP_CROSS_CHAIN ? 'activeTab' : ''
@@ -326,7 +262,7 @@ const SwapMain: React.FC = () => {
                     </Box>
                     <Box className='trade-btn'>{t('crossChain')}</Box>
                   </Box>
-                )}
+                )} */}
               </Box>
             </>
           ) : (
@@ -348,32 +284,119 @@ const SwapMain: React.FC = () => {
         </Box>
       </Box>
       {/* Tabs */}
-      {swapTabs.length > 0 && (
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gridGap: '20px',
+        }}
+      >
+        {swapTabs.length > 0 && (
+          <Box
+            // margin={isProMode ? '28px 0' : '28px 0 0'}
+            className='swapLimitTabs'
+            sx={{ width: '100%' }}
+            borderRadius={isProMode ? 0 : 10}
+          >
+            {swapTabs.map((tab) => (
+              <>
+                <Box
+                  className={`swapLimitTab ${
+                    isActiveSwapTab(tab.id) ? 'activeSwapLimitTab' : ''
+                  }`}
+                  key={tab.id.toString()}
+                  borderRadius={isProMode ? 0 : 10}
+                  onClick={() => {
+                    if (tab.id === 'market') return;
+                    redirectWithSwapType(Number(tab.id));
+                  }}
+                >
+                  {tab.id === 'market' ? (
+                    <>
+                      {dropDownMenuText && (
+                        <Button
+                          id='swap-button'
+                          aria-controls={open ? 'swap-menu' : undefined}
+                          aria-haspopup='true'
+                          aria-expanded={open ? 'true' : undefined}
+                          variant='text'
+                          disableElevation
+                          onClick={handleClickListItem}
+                          endIcon={<KeyboardArrowDown />}
+                          style={{
+                            fontSize: '14px',
+                          }}
+                          className={`tab tabMenu ${
+                            selectedIndex !== SWAP_CROSS_CHAIN
+                              ? 'activeTab'
+                              : ''
+                          }`}
+                        >
+                          {t(dropDownMenuText)}
+                        </Button>
+                      )}
+                      <Menu
+                        id='swap-menu'
+                        anchorEl={anchorEl}
+                        open={open}
+                        onClose={handleClose}
+                        MenuListProps={{
+                          'aria-labelledby': 'swap-button',
+                          role: 'listbox',
+                        }}
+                      >
+                        {SwapDropdownTabs.filter(
+                          (d) => d.visible !== false,
+                        ).map((option, index) => (
+                          <MenuItem
+                            className={`swap-menu-item ${
+                              option.key === selectedIndex
+                                ? 'swap-menu-item-selected'
+                                : ''
+                            }`}
+                            key={option.key}
+                            disabled={option.key === selectedIndex}
+                            selected={option.key === selectedIndex}
+                            onClick={(event) =>
+                              handleMenuItemClick(event, index)
+                            }
+                          >
+                            {t(option.name)}
+                            {option.key === selectedIndex && (
+                              <Box ml={5} className='selectedMenuDot' />
+                            )}
+                          </MenuItem>
+                        ))}
+                      </Menu>
+                    </>
+                  ) : (
+                    <small>{tab.text}</small>
+                  )}
+                </Box>
+              </>
+            ))}
+          </Box>
+        )}
         <Box
-          margin={isProMode ? '28px 0' : '28px 0 0'}
-          className='swapLimitTabs'
-          borderRadius={isProMode ? 0 : 10}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '36px',
+            height: '32px',
+            borderRadius: '50%',
+            bgcolor: '#1e263d',
+          }}
+          className='flex items-center'
         >
-          {swapTabs.map((tab) => (
-            <Box
-              className={`swapLimitTab ${
-                isActiveSwapTab(tab.id) ? 'activeSwapLimitTab' : ''
-              }`}
-              key={tab.id.toString()}
-              borderRadius={isProMode ? 0 : 10}
-              onClick={() => {
-                if (tab.id === 'market') {
-                  redirectWithSwapType(SWAP_BEST_TRADE);
-                } else {
-                  redirectWithSwapType(Number(tab.id));
-                }
-              }}
-            >
-              <small>{tab.text}</small>
-            </Box>
-          ))}
+          {/* <SlippageWrapper /> */}
+          <SettingsIcon
+            className='cursor-pointer'
+            onClick={() => setOpenSettingsModal(true)}
+          />
         </Box>
-      )}
+      </Box>
       {/* Widget Body */}
       <Box
         style={{

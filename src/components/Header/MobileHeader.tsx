@@ -37,7 +37,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
   const [isActive, setIsActive] = useState(false);
   const location = useLocation();
   const { chainId, account } = useActiveWeb3React();
-
+  console.log('@@@', menuItems);
   useEffect(() => {
     setIsActive(false);
   }, [location]);
@@ -134,8 +134,8 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
         style={{
           width: '100%',
           height: isActive ? '100vh' : '0px',
-          backgroundColor: isMobile ? '#374769;' : '#12131a',
-          opacity: isMobile && !isActive ? 0.32 : 1,
+          backgroundColor: '#12131a',
+          opacity: isMobile && !isActive ? 0.6 : 1,
           position: 'fixed',
           left: 0,
           top: '64px',
@@ -152,18 +152,9 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
             Products
           </Typography>
           <Box style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            {menuItems
-              .filter(
-                (val) =>
-                  ![
-                    'contest-page-link',
-                    'convert-quick',
-                    'dappos-page-link',
-                  ].includes(val.id),
-              )
-              .map((item, i) => {
-                return <MobileNavItem key={i} navItem={item} />;
-              })}
+            {menuItems.map((item, i) => {
+              return <MobileNavItem key={i} navItem={item} />;
+            })}
           </Box>
         </Box>
         <Box style={{ paddingTop: '12px', borderBottom: '1px solid #242938' }}>
@@ -174,7 +165,7 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
               marginBottom: '12px',
             }}
           >
-            Govermance
+            Governance
           </Typography>
           <Box style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
             {govermance.map((item, index) => {
@@ -294,8 +285,8 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
             height: '64px',
             display: 'flex',
             alignItems: 'center',
-            backgroundColor: 'rgb(18 19 26 / 49%)',
-            backdropFilter: 'blur(30px)',
+            backgroundColor: 'rgb(18 19 26)',
+            // backdropFilter: 'blur(30px)',
             padding: '0 42px',
           }}
         >
@@ -357,6 +348,21 @@ const MobileHeader: React.FC<MobileHeaderProps> = ({
                           if (process.env.REACT_APP_PERPS_URL) {
                             window.open(
                               process.env.REACT_APP_PERPS_URL,
+                              '_blank',
+                            );
+                          }
+                        },
+                      },
+                      {
+                        link: '/hydra',
+                        text: 'Hydra',
+                        id: 'hydra-page-link',
+                        isExternal: true,
+                        externalLink: process?.env?.REACT_APP_HYDRA_URL || '',
+                        onClick: async () => {
+                          if (process.env.REACT_APP_HYDRA_URL) {
+                            window.open(
+                              process.env.REACT_APP_HYDRA_URL,
                               '_blank',
                             );
                           }

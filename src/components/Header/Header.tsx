@@ -96,12 +96,17 @@ const Header: React.FC<{ onUpdateNewsletter: (val: boolean) => void }> = ({
   const showLeaderboard = config['leaderboard']['available'];
   const showSafe = config['safe']['available'];
   const showPerps = config['perps']['available'];
+  const showHydra = config['hydra']['available'];
   const showPerpsV2 = config['perpsV2']['available'];
   const showBOS = config['bos']['available'];
   const showBonds = config['bonds']['available'];
   const showDappOS = config['dappos']['available'];
   const showEarn = showFarm && showBonds;
   const menuItems: Array<HeaderMenuItem> = [];
+  const isPerpsDropdown =
+    (showPerpsV2 && showPerps) ||
+    (showHydra && showPerps) ||
+    (showPerpsV2 && showHydra);
 
   const swapCurrencyStr = useMemo(() => {
     if (!chainId) return '';
@@ -121,13 +126,29 @@ const Header: React.FC<{ onUpdateNewsletter: (val: boolean) => void }> = ({
       id: 'swap-page-link',
     });
   }
-  const perpsTab: HeaderMenuItem = {
-    text: t('Perps'),
-    id: 'earn-tab',
-    link: '/',
-    items: [],
-    isNew: true,
+
+  const hydraItem = {
+    link: '/hydra',
+    text: 'Hydra',
+    id: 'hydra-page-link',
+    isExternal: true,
+    externalLink: process?.env?.REACT_APP_HYDRA_URL || '',
+    onClick: async () => {
+      if (chainId !== ChainId.ZKEVM) {
+        switchNetwork(ChainId.ZKEVM);
+      }
+      if (process.env.REACT_APP_HYDRA_URL) {
+        window.open(process.env.REACT_APP_HYDRA_URL, '_blank');
+      }
+    },
   };
+  // const perpsTab: HeaderMenuItem = {
+  //   text: t('Perps'),
+  //   id: 'earn-tab',
+  //   link: '/',
+  //   items: [],
+  //   isNew: true,
+  // };
   // if (showPerpsV2 && showPerps) {
   //   menuItems.push(perpsTab);
   // }
@@ -185,6 +206,7 @@ const Header: React.FC<{ onUpdateNewsletter: (val: boolean) => void }> = ({
             }
           },
         },
+        hydraItem,
       ],
     });
   } else {
@@ -223,25 +245,25 @@ const Header: React.FC<{ onUpdateNewsletter: (val: boolean) => void }> = ({
     items: [],
   };
 
-  const partnersTab: HeaderMenuItem = {
-    text: t('Partners'),
-    id: 'partners',
-    link: '/partners',
-    items: [
-      {
-        link: '/dappOS',
-        text: 'DappOS',
-        id: 'dappos-page-link',
-        isExternal: true,
-        target: '_blank',
-        externalLink: process?.env?.REACT_APP_DAPPOS_URL || '',
-      },
-    ],
-  };
+  // const partnersTab: HeaderMenuItem = {
+  //   text: t('Partners'),
+  //   id: 'partners',
+  //   link: '/partners',
+  //   items: [
+  //     {
+  //       link: '/dappOS',
+  //       text: 'DappOS',
+  //       id: 'dappos-page-link',
+  //       isExternal: true,
+  //       target: '_blank',
+  //       externalLink: process?.env?.REACT_APP_DAPPOS_URL || '',
+  //     },
+  //   ],
+  // };
+  // menuItems.push(partnersTab);
   if (showEarn) {
     menuItems.push(earnTab);
   }
-  menuItems.push(partnersTab);
   if (showFarm) {
     if (showEarn) {
       earnTab.items?.push({
@@ -331,6 +353,15 @@ const Header: React.FC<{ onUpdateNewsletter: (val: boolean) => void }> = ({
       id: 'convert-quick',
     });
   }
+
+  menuItems.push({
+    link: '/dappOS',
+    text: 'DappOS',
+    id: 'dappos-page-link',
+    isExternal: true,
+    target: '_blank',
+    externalLink: process?.env?.REACT_APP_DAPPOS_URL || '',
+  });
 
   if (showLending) {
     menuItems.push({
